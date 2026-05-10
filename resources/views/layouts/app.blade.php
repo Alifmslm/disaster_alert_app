@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? config('app.name', 'Siaga Bencana') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <script src="https://kit.fontawesome.com/c6a35e66f0.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="app-shell">
