@@ -8,7 +8,7 @@
     
     <script src="https://kit.fontawesome.com/c6a35e66f0.js" crossorigin="anonymous"></script>
 </head>
-<body class="flex flex-col h-screen m-0 overflow-hidden font-sans text-gray-800 bg-slate-800">
+<body class="flex flex-col h-screen m-0 overflow-hidden font-sans text-gray-100 bg-[#0f172a]">
     
     <x-header />
 
@@ -16,7 +16,7 @@
         
         <x-sidebar />
 
-        <main class="flex-1 p-6 overflow-y-auto bg-white">
+        <main class="flex-1 p-6 overflow-y-auto bg-[#0f172a]">
             @yield('content')
         </main>
         
