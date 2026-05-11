@@ -9,7 +9,14 @@ class SafetyGuideResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        // TODO: map only fields needed by the frontend/mobile app.
-        return parent::toArray($request);
+        return [
+            'id'             => $this->id,
+            'judul'          => $this->title,
+            'deskripsi'      => $this->description,
+            'konten_edukasi' => $this->content,
+            'tipe_bencana'   => $this->disaster_type,
+            'gambar_panduan' => $this->image_url,
+            'video_url'      => $this->video_url, 
+        ];
     }
 }
