@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <style>
     .manage-data-page {
         min-height: calc(100vh - 3.5rem);
@@ -581,4 +579,6 @@
         </div>
     </div>
 </section>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\golde\Downloads\disaster_alert_app\resources\views/pages/officer/manage-data.blade.php ENDPATH**/ ?>
