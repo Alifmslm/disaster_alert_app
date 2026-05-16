@@ -2,11 +2,10 @@
 
 namespace App\Http\Requests\Officer;
 
-use App\Enums\EmergencyPlaceType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreEmergencyPlaceRequest extends FormRequest
+class StoreHealthFacilityRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,7 +16,6 @@ class StoreEmergencyPlaceRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', Rule::in(array_column(EmergencyPlaceType::cases(), 'value'))],
             'address' => ['required', 'string', 'max:500'],
             'area' => ['nullable', 'string', 'max:255'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],

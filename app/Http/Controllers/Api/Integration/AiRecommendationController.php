@@ -2,20 +2,33 @@
 
 namespace App\Http\Controllers\Api\Integration;
 
-use App\Http\Controllers\Concerns\ReturnsPlaceholderResponse;
+use App\Http\Controllers\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
+use App\Services\AiRecommendationService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AiRecommendationController extends Controller
 {
-    use ReturnsPlaceholderResponse;
+    use RespondsWithApi;
 
-    public function responsive()
-{
-    return $this->todo('Api.Integration.AiRecommendation.responsive');
-}
+    public function __construct(private readonly AiRecommendationService $ai)
+    {
+    }
 
-public function preventive()
-{
-    return $this->todo('Api.Integration.AiRecommendation.preventive');
-}
+    public function responsive(Request $request): JsonResponse
+    {
+        return $this->success(
+            $this->ai->responsive($request->all()),
+            'Rekomendasi responsif berhasil dibuat.'
+        );
+    }
+
+    public function preventive(Request $request): JsonResponse
+    {
+        return $this->success(
+            $this->ai->preventive($request->all()),
+            'Rekomendasi preventif berhasil dibuat.'
+        );
+    }
 }

@@ -3,20 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MitigationNote extends Model
 {
+    protected $fillable = [
+        'officer_id',
+        'title',
+        'disaster_type',
+        'affected_area',
+        'action_date',
+        'description',
+        'metadata',
+    ];
 
+    protected $casts = [
+        'metadata' => 'array',
+        'action_date' => 'date',
+    ];
 
-    protected $fillable = ['officer_id','title','disaster_type','affected_area','action_date','description','metadata'];
-
-protected $casts = [
-    'metadata' => 'array',
-    'occurred_at' => 'datetime',
-    'resolved_at' => 'datetime',
-    'verified_at' => 'datetime',
-    'action_date' => 'date',
-    'is_published' => 'boolean',
-];
-
+    public function officer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'officer_id');
+    }
 }

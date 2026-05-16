@@ -3,10 +3,13 @@
 namespace App\Repositories\Contracts;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 interface EmergencyPlaceRepositoryInterface
 {
     public function paginateForIndex(array $filters = []): LengthAwarePaginator;
+
+    public function allForMap(array $filters = []): Collection;
 
     public function findById(int $id): ?object;
 

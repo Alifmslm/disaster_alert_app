@@ -2,35 +2,65 @@
 
 namespace App\Http\Controllers\Api\Officer;
 
-use App\Http\Controllers\Concerns\ReturnsPlaceholderResponse;
+use App\Http\Controllers\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Officer\StoreHealthFacilityRequest;
+use App\Http\Resources\EmergencyPlaceResource;
+use App\Models\EmergencyPlace;
+use App\Services\EmergencyPlaceService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class HealthFacilityManagementController extends Controller
 {
-    use ReturnsPlaceholderResponse;
+    use RespondsWithApi;
 
-    public function index()
-{
-    return $this->todo('Api.Officer.HealthFacilityManagement.index');
-}
+    public function __construct(private readonly EmergencyPlaceService $places)
+    {
+    }
 
-public function store()
-{
-    return $this->todo('Api.Officer.HealthFacilityManagement.store');
-}
+    public function index(Request $request): JsonResponse
+    {
+        return $this->paginated(
+            $this->places->paginate(array_merge($request->query(), ['type' => 'health_facility'])),
+            EmergencyPlaceResource::class,
+            'Daftar fasilitas kesehatan berhasil diambil.'
+        );
+    }
 
-public function show()
-{
-    return $this->todo('Api.Officer.HealthFacilityManagement.show');
-}
+    public function store(StoreHealthFacilityRequest $request): JsonResponse
+    {
+        $payload = array_merge($request->validated(), ['type' => 'health_facility']);
 
-public function update()
-{
-    return $this->todo('Api.Officer.HealthFacilityManagement.update');
-}
+        return $this->success(
+            new EmergencyPlaceResource($this->places->create($payload)),
+            'Fasilitas kesehatan berhasil dibuat.',
+            201
+        );
+    }
 
-public function destroy()
-{
-    return $this->todo('Api.Officer.HealthFacilityManagement.destroy');
-}
+    public function show(EmergencyPlace $facility): JsonResponse
+    {
+        return $this->success(
+            new EmergencyPlaceResource($this->places->find($facility->id)),
+            'Detail fasilitas kesehatan berhasil diambil.'
+        );
+    }
+
+    public function update(StoreHealthFacilityRequest $request, EmergencyPlace $facility): JsonResponse
+    {
+        $payload = array_merge($request->validated(), ['type' => 'health_facility']);
+
+        return $this->success(
+            new EmergencyPlaceResource($this->places->update($facility->id, $payload)),
+            'Fasilitas kesehatan berhasil diperbarui.'
+        );
+    }
+
+    public function destroy(EmergencyPlace $facility): JsonResponse
+    {
+        $this->places->delete($facility->id);
+
+        return $this->success(null, 'Fasilitas kesehatan berhasil dihapus.');
+    }
 }

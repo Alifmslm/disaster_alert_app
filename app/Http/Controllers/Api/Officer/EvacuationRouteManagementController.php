@@ -2,35 +2,61 @@
 
 namespace App\Http\Controllers\Api\Officer;
 
-use App\Http\Controllers\Concerns\ReturnsPlaceholderResponse;
+use App\Http\Controllers\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Officer\StoreEvacuationRouteRequest;
+use App\Http\Resources\EvacuationRouteResource;
+use App\Models\EvacuationRoute;
+use App\Services\EvacuationRouteService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class EvacuationRouteManagementController extends Controller
 {
-    use ReturnsPlaceholderResponse;
+    use RespondsWithApi;
 
-    public function index()
-{
-    return $this->todo('Api.Officer.EvacuationRouteManagement.index');
-}
+    public function __construct(private readonly EvacuationRouteService $routes)
+    {
+    }
 
-public function store()
-{
-    return $this->todo('Api.Officer.EvacuationRouteManagement.store');
-}
+    public function index(Request $request): JsonResponse
+    {
+        return $this->paginated(
+            $this->routes->paginate($request->query()),
+            EvacuationRouteResource::class,
+            'Daftar jalur evakuasi berhasil diambil.'
+        );
+    }
 
-public function show()
-{
-    return $this->todo('Api.Officer.EvacuationRouteManagement.show');
-}
+    public function store(StoreEvacuationRouteRequest $request): JsonResponse
+    {
+        return $this->success(
+            new EvacuationRouteResource($this->routes->create($request->validated())),
+            'Jalur evakuasi berhasil dibuat.',
+            201
+        );
+    }
 
-public function update()
-{
-    return $this->todo('Api.Officer.EvacuationRouteManagement.update');
-}
+    public function show(EvacuationRoute $route): JsonResponse
+    {
+        return $this->success(
+            new EvacuationRouteResource($this->routes->find($route->id)),
+            'Detail jalur evakuasi berhasil diambil.'
+        );
+    }
 
-public function destroy()
-{
-    return $this->todo('Api.Officer.EvacuationRouteManagement.destroy');
-}
+    public function update(StoreEvacuationRouteRequest $request, EvacuationRoute $route): JsonResponse
+    {
+        return $this->success(
+            new EvacuationRouteResource($this->routes->update($route->id, $request->validated())),
+            'Jalur evakuasi berhasil diperbarui.'
+        );
+    }
+
+    public function destroy(EvacuationRoute $route): JsonResponse
+    {
+        $this->routes->delete($route->id);
+
+        return $this->success(null, 'Jalur evakuasi berhasil dihapus.');
+    }
 }

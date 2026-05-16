@@ -3,20 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class NotificationPreference extends Model
 {
+    protected $fillable = [
+        'user_id',
+        'alert_filter',
+        'sound_enabled',
+        'push_enabled',
+        'email_enabled',
+        'metadata',
+    ];
 
+    protected $casts = [
+        'metadata' => 'array',
+        'sound_enabled' => 'boolean',
+        'push_enabled' => 'boolean',
+        'email_enabled' => 'boolean',
+    ];
 
-    protected $fillable = ['user_id','alert_filter','sound_enabled','push_enabled','email_enabled','metadata'];
-
-protected $casts = [
-    'metadata' => 'array',
-    'occurred_at' => 'datetime',
-    'resolved_at' => 'datetime',
-    'verified_at' => 'datetime',
-    'action_date' => 'date',
-    'is_published' => 'boolean',
-];
-
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

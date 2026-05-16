@@ -2,25 +2,31 @@
 
 namespace App\Http\Controllers\Api\Integration;
 
-use App\Http\Controllers\Concerns\ReturnsPlaceholderResponse;
+use App\Http\Controllers\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
+use App\Services\BmkgService;
+use Illuminate\Http\JsonResponse;
 
 class BmkgController extends Controller
 {
-    use ReturnsPlaceholderResponse;
+    use RespondsWithApi;
 
-    public function status()
-{
-    return $this->todo('Api.Integration.Bmkg.status');
-}
+    public function __construct(private readonly BmkgService $bmkg)
+    {
+    }
 
-public function latest()
-{
-    return $this->todo('Api.Integration.Bmkg.latest');
-}
+    public function status(): JsonResponse
+    {
+        return $this->success($this->bmkg->status(), 'Status integrasi BMKG berhasil diambil.');
+    }
 
-public function sync()
-{
-    return $this->todo('Api.Integration.Bmkg.sync');
-}
+    public function latest(): JsonResponse
+    {
+        return $this->success($this->bmkg->latest(), 'Data terbaru BMKG berhasil diproses.');
+    }
+
+    public function sync(): JsonResponse
+    {
+        return $this->success($this->bmkg->sync(), 'Sinkronisasi BMKG selesai diproses.');
+    }
 }
