@@ -5,16 +5,20 @@ use App\Http\Controllers\Web\UserPageController;
 use App\Models\SafetyGuide; 
 use Illuminate\Support\Facades\Route;
 
-
+Route::get('/login', function () {
+    return redirect('/');
+})->name('login');
 Route::get('/', [UserPageController::class, 'home'])->name('user.home');
 
-Route::prefix('user')->name('user.')->group(function (): void {
+Route::get('/user/profil', [UserPageController::class, 'profile'])->name('user.profile');
+
+Route::prefix('user')->name('user.')->middleware('auth')->group(function (): void {
     Route::get('/home', [UserPageController::class, 'home'])->name('home');
     Route::get('/peta-evakuasi', [UserPageController::class, 'map'])->name('map');
     Route::get('/laporkan-bencana', [UserPageController::class, 'report'])->name('report');
     Route::get('/panduan-aman', [UserPageController::class, 'safety'])->name('safety');
-    Route::get('/profil', [UserPageController::class, 'profile'])->name('profile');
 });
+
 
 Route::prefix('petugas')->name('officer.')->group(function (): void {
     Route::get('/home', [OfficerPageController::class, 'home'])->name('home');
