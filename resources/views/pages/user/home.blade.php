@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-    {{-- Warning Banner --}}
+    <div class="p-6">
+        {{-- Warning Banner --}}
     <section class="min-h-[106px] bg-gradient-to-br from-[#fb923c] via-[#f97316] to-[#ff8a3d] rounded-[18px] text-white flex flex-col md:flex-row md:items-center justify-between gap-6 py-[22px] px-6 shadow-[0_18px_35px_rgba(249,115,22,0.24)]">
         <div class="max-w-[720px] w-full">
             <span class="inline-flex mb-[7px] py-1 px-2 rounded-full bg-white/20 text-[#fff7ed] text-[9px] font-black tracking-[0.08em]">WASPADA</span>
@@ -105,6 +106,7 @@
 
         </div>
     </section>
+    </div>
 @endsection
 
 @push('scripts')
