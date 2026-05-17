@@ -1,5 +1,10 @@
 @extends('layouts.app')
 
+@push('styles')
+<!-- Tambahkan CSS Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+@endpush
+
 @section('content')
 <div class="min-h-screen bg-slate-50 p-8 font-sans text-slate-800">
     <div class="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -100,17 +105,16 @@
         
         {{-- Kontainer Peta --}}
         <div class="relative h-96 w-full rounded-xl border border-slate-200 bg-slate-100 overflow-hidden">
-            
             <div id="distributionMap" class="absolute inset-0 z-0"></div>
             
             {{-- Custom Zoom Control diposisikan di atas Leaflet --}}
             <div class="absolute bottom-4 right-4 flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm z-[500]">
-                <button id="zoomInBtn" class="p-2 text-slate-600 hover:bg-slate-100 border-b border-slate-200 transition-colors">
+                <button id="zoomInBtn" class="p-2 text-slate-600 hover:bg-slate-100 border-b border-slate-200 transition-colors cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
                 </button>
-                <button id="zoomOutBtn" class="p-2 text-slate-600 hover:bg-slate-100 transition-colors">
+                <button id="zoomOutBtn" class="p-2 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
                     </svg>
@@ -230,35 +234,51 @@
 @endsection
 
 @push('scripts')
-<script type="module">
+<!-- Tambahkan JS Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- Script inisialisasi Peta -->
+<script>
 document.addEventListener('DOMContentLoaded', function () {
-    var map = L.map('distributionMap', {
-        zoomControl: false 
-    }).setView([-6.2250, 106.9004], 12);
+    // Memastikan elemen peta ada di DOM sebelum diinisialisasi
+    if (document.getElementById('distributionMap')) {
+        var map = L.map('distributionMap', {
+            zoomControl: false // Mematikan zoom bawaan karena kita pakai custom zoom HTML
+        }).setView([-6.2250, 106.9004], 12);
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
 
-    document.getElementById('zoomInBtn').addEventListener('click', function() {
-        map.zoomIn();
-    });
-    
-    document.getElementById('zoomOutBtn').addEventListener('click', function() {
-        map.zoomOut();
-    });
+        // Binding tombol zoom kustom ke fungsi map
+        document.getElementById('zoomInBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            map.zoomIn();
+        });
+        
+        document.getElementById('zoomOutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            map.zoomOut();
+        });
 
-    var incidentData = [
-        { lat: -6.2425, lng: 106.8642, title: 'Darurat: Tanggul Jebol', desc: 'Jatiwarna, Jakarta Timur', status: 'red' },
-        { lat: -6.3000, lng: 106.8800, title: 'Waspada: Pohon Tumbang', desc: 'Jl. Raya Bogor KM 22', status: 'orange' },
-        { lat: -6.3200, lng: 106.8700, title: 'Info: Distribusi Logistik', desc: 'GOR Ciracas', status: 'blue' }
-    ];
+        // Menambahkan Pin Data Dummy Kejadian (Ini bisa diganti ke integrasi API Sentinel Anda nanti)
+        var incidentData = [
+            { lat: -6.2425, lng: 106.8642, title: 'Darurat: Tanggul Jebol', desc: 'Jatiwarna, Jakarta Timur', status: '#dc2626' }, // red-600
+            { lat: -6.3000, lng: 106.8800, title: 'Waspada: Pohon Tumbang', desc: 'Jl. Raya Bogor KM 22', status: '#ea580c' }, // orange-600
+            { lat: -6.3200, lng: 106.8700, title: 'Info: Distribusi Logistik', desc: 'GOR Ciracas', status: '#2563eb' } // blue-600
+        ];
 
-    incidentData.forEach(function(incident) {
-        L.marker([incident.lat, incident.lng]).addTo(map)
-            .bindPopup('<strong style="color:' + incident.status + '">' + incident.title + '</strong><br>' + incident.desc);
-    });
+        incidentData.forEach(function(incident) {
+            L.marker([incident.lat, incident.lng]).addTo(map)
+                .bindPopup('<strong style="color:' + incident.status + '">' + incident.title + '</strong><br>' + incident.desc);
+        });
+
+        // Trik wajib untuk Tailwind + Leaflet agar peta di-render full dan rapi saat load pertama kali
+        setTimeout(function () {
+            map.invalidateSize();
+        }, 500);
+    }
 });
 </script>
 @endpush

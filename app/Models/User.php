@@ -23,7 +23,10 @@ class User extends Authenticatable
         'profile_photo_path',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password', 
+        'remember_token'
+    ];
 
     protected function casts(): array
     {
@@ -31,6 +34,16 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function isOfficer(): bool
+    {
+        return $this->role === 'officer';
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === 'user';
     }
 
     public function reports(): HasMany
