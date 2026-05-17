@@ -2,15 +2,19 @@
 
 use App\Http\Controllers\Web\OfficerPageController;
 use App\Http\Controllers\Web\UserPageController;
+use App\Http\Controllers\BmkgController;
 use App\Models\SafetyGuide; 
 use Illuminate\Support\Facades\Route;
 
 Route::get('/login', function () {
     return redirect('/');
 })->name('login');
-Route::get('/', [UserPageController::class, 'home'])->name('user.home');
 
+Route::get('/', [UserPageController::class, 'home'])->name('user.home');
 Route::get('/user/profil', [UserPageController::class, 'profile'])->name('user.profile');
+
+
+Route::get('/user/bmkg-terbaru', [BmkgController::class, 'getLatestEarthquake'])->name('user.bmkg.terbaru');
 
 Route::prefix('user')->name('user.')->middleware('auth')->group(function (): void {
     Route::get('/home', [UserPageController::class, 'home'])->name('home');
@@ -18,7 +22,6 @@ Route::prefix('user')->name('user.')->middleware('auth')->group(function (): voi
     Route::get('/laporkan-bencana', [UserPageController::class, 'report'])->name('report');
     Route::get('/panduan-aman', [UserPageController::class, 'safety'])->name('safety');
 });
-
 
 Route::prefix('petugas')->name('officer.')->group(function (): void {
     Route::get('/home', [OfficerPageController::class, 'home'])->name('home');
@@ -28,9 +31,6 @@ Route::prefix('petugas')->name('officer.')->group(function (): void {
 
 use App\Http\Controllers\Web\Officer\KelolaDataController;
 
-// ... route lainnya ...
-
-// Pastikan ini nantinya dibungkus dengan middleware auth & role:officer
 Route::prefix('petugas/kelola-data')->name('officer.kelola-data.')->group(function () {
     Route::get('/laporan', [KelolaDataController::class, 'laporan'])->name('laporan');
     Route::get('/evakuasi', [KelolaDataController::class, 'evakuasi'])->name('evakuasi');

@@ -170,7 +170,7 @@
             }, 500);
         }
 
-        // 2. AJAX Fetch Data BMKG Ke Backend
+    
         fetch("/user/bmkg-terbaru", {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -182,7 +182,7 @@
             return response.json();
         })
         .then(data => {
-            // A. Update Single Card Utama nomor 4
+            
             if (data.judul) {
                 if(document.getElementById('bmkg-judul')) document.getElementById('bmkg-judul').innerText = data.judul;
                 if(document.getElementById('bmkg-deskripsi')) document.getElementById('bmkg-deskripsi').innerText = data.deskripsi + ' (' + data.waktu + ')';
@@ -198,7 +198,7 @@
                 }
             }
 
-            // B. Inject Data ke Tabel List Riwayat Bencana di Bawah
+            // B. List Riwayat Bencana di Bawah
             const listContainer = document.getElementById('bmkg-list-container');
             if (listContainer) {
                 listContainer.innerHTML = ''; 
