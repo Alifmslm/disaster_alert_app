@@ -54,5 +54,15 @@
             <i class="fa-regular fa-circle-question w-5 text-center"></i>
             <span>Support</span>
         </a>
+
+        @auth
+        <form method="POST" action="{{ route('logout') }}" class="w-full">
+            @csrf
+            <button type="submit" class="flex w-full items-center gap-4 px-4 py-2 text-sm transition-colors duration-200 rounded text-gray-400 hover:bg-slate-700 hover:text-red-400 text-left">
+                <i class="fa-solid fa-arrow-right-from-bracket w-5 text-center"></i>
+                <span>Logout</span>
+            </button>
+        </form>
+        @endauth
     </div>
 </aside>
