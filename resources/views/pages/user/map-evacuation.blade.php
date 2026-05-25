@@ -90,8 +90,9 @@
 <style>
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #F1F5F9; border-radius: 20px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #E2E8F0; }
+    /* Animasi pulse telah dihapus karena sudah digantikan oleh peta asli */
 </style>
 @endsection
 
@@ -254,7 +255,8 @@ document.addEventListener('DOMContentLoaded', function () {
         renderView(currentCenterLatLng);
     }
 
-    setTimeout(function () { map.invalidateSize(); }, 400);
+    var group = new L.featureGroup([markerMenteng, markerIstiqlal, geofenceRadius]);
+    map.fitBounds(group.getBounds(), { padding: [50, 50] });
 });
 </script>
 @endpush
