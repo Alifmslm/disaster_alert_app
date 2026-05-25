@@ -2,11 +2,16 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 <style>
     #evacuationMap {
         height: 292px !important;
         width: 100% !important;
         background: #f8fafc;
+    }
+
+    .leaflet-routing-container {
+        display: none !important;
     }
 </style>
 @endpush
@@ -37,7 +42,7 @@
 
                 {{-- Tombol deteksi lokasi --}}
                 <button id="btn-deteksi-lokasi"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-bold text-orange-600 transition hover:bg-orange-100">
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-bold text-orange-600 transition hover:bg-orange-100 cursor-pointer">
                     <i class="fa-solid fa-location-crosshairs text-xs"></i>
                     Lokasi Saya
                 </button>
@@ -195,6 +200,7 @@
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -232,7 +238,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Warna marker per tipe
     const warnaMarker = {
         shelter:          '#10b981', // emerald
         emergency_post:   '#f97316', // orange
@@ -241,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function () {
         default:          '#64748b', // slate
     };
 
-    // Label tipe dalam Bahasa Indonesia
     const labelTipe = {
         shelter:          'Shelter',
         emergency_post:   'Posko Darurat',
@@ -273,7 +277,6 @@ document.addEventListener('DOMContentLoaded', function () {
             mapFeatures.push(marker);
         });
 
-        // Fit bounds ke semua marker agar semua terlihat
         if (mapFeatures.length > 0) {
             const group = L.featureGroup(mapFeatures);
             map.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 15 });
@@ -281,10 +284,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // =============================================
-    // DETEKSI LOKASI USER
+    // TRACKING GEOLOKASI USER & AUTO ROUTING
     // =============================================
-    let userMarker   = null;
-    let userCircle   = null;
+    let userMarker     = null;
+    let userCircle     = null;
+    let routingControl = null; // Menyimpan instance rute aktif
 
     const btnLokasi    = document.getElementById('btn-deteksi-lokasi');
     const statusEl     = document.getElementById('lokasi-status');
@@ -306,7 +310,6 @@ document.addEventListener('DOMContentLoaded', function () {
             statusIcon.className = 'fa-solid fa-circle-xmark text-red-500 text-xs shrink-0';
             statusText.className = 'text-[11px] font-bold text-red-700';
         }
-
         statusText.textContent = pesan;
     }
 
@@ -327,37 +330,66 @@ document.addEventListener('DOMContentLoaded', function () {
                 const lng = position.coords.longitude;
                 const acc = Math.round(position.coords.accuracy);
 
-                // Hapus marker & lingkaran user sebelumnya jika ada
                 if (userMarker) map.removeLayer(userMarker);
                 if (userCircle) map.removeLayer(userCircle);
+                if (routingControl) map.removeControl(routingControl);
 
-                // Marker lokasi user (warna violet)
+                // Marker lokasi user (violet)
                 userMarker = L.marker([lat, lng], { icon: buatMarkerIcon('#7c3aed') })
                     .addTo(map)
                     .bindPopup(`
                         <div style="min-width:160px">
-                            <p style="margin:0 0 4px;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.05em">Lokasi Anda</p>
+                            <p style="margin:0 0 4px;font-size:11px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em">Lokasi Anda</p>
                             <p style="margin:0;font-size:12px;font-weight:600;color:#0f172a">${lat.toFixed(5)}, ${lng.toFixed(5)}</p>
-                            <p style="margin:4px 0 0;font-size:10px;color:#94a3b8">Akurasi: ±${acc} meter</p>
                         </div>
-                    `)
-                    .openPopup();
+                    `).openPopup();
 
-                // Lingkaran akurasi
                 userCircle = L.circle([lat, lng], {
-                    radius:      acc,
-                    color:       '#7c3aed',
-                    fillColor:   '#7c3aed',
-                    fillOpacity: 0.08,
-                    weight:      1.5,
+                    radius: acc, color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.08, weight: 1.5,
                 }).addTo(map);
 
-                map.setView([lat, lng], 15);
+                // LOGIKA AUTO-ROUTING KE FASILITAS TERDEKAT
+                if (emergencyPlaces.length > 0) {
+                    let terdekat = null;
+                    let jarakTerkecil = Infinity;
+                    const userLatLng = L.latLng(lat, lng);
 
-                tampilkanStatus('sukses', `Lokasi terdeteksi — akurasi ±${acc} meter`);
+                    // Cari fasilitas dengan jarak lurus terdekat dahulu
+                    emergencyPlaces.forEach(function (place) {
+                        const targetLatLng = L.latLng(place.lat, place.lng);
+                        const jarak = map.distance(userLatLng, targetLatLng);
+                        if (jarak < jarakTerkecil) {
+                            jarakTerkecil = jarak;
+                            terdekat = place;
+                        }
+                    });
+
+                    if (terdekat) {
+                        // Gambar jalur rute jalan raya terdekat menggunakan OSRM
+                        routingControl = L.Routing.control({
+                            waypoints: [
+                                userLatLng,
+                                L.latLng(terdekat.lat, terdekat.lng)
+                            ],
+                            lineOptions: {
+                                styles: [{ color: '#7c3aed', opacity: 0.8, weight: 5 }] // Jalur rute ungu snapping jalan
+                            },
+                            addWaypoints: false,
+                            draggableWaypoints: false,
+                            fitSelectedRoutes: true,
+                            show: false,
+                            createMarker: function() { return null; } // Mencegah pembuatan marker duplikat
+                        }).addTo(map);
+
+                        tampilkanStatus('sukses', `Lokasi terdeteksi (±${acc}m). Rute evakuasi otomatis dibuat menuju: ${terdekat.name}`);
+                    }
+                } else {
+                    map.setView([lat, lng], 15);
+                    tampilkanStatus('sukses', `Lokasi terdeteksi — akurasi ±${acc} meter. Belum ada fasilitas darurat terdaftar.`);
+                }
 
                 btnLokasi.innerHTML = '<i class="fa-solid fa-circle-check text-xs"></i> Terdeteksi';
-                btnLokasi.classList.remove('border-orange-200', 'bg-orange-50', 'text-orange-600');
+                btnLokasi.className = btnLokasi.className.replace(/border-\S+/g, '').replace(/bg-\S+/g, '').replace(/text-\S+/g, '').trim();
                 btnLokasi.classList.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-600');
                 btnLokasi.disabled = false;
             },
@@ -377,11 +409,10 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     });
 
-    // Invalidate size setelah render
     setTimeout(() => map.invalidateSize(), 400);
 
     // =============================================
-    // BMKG: DATA GEMPA TERBARU (CARD)
+    // BMKG INTEGRATIONS
     // =============================================
     fetch('/bmkg-terbaru', {
         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
@@ -412,9 +443,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (deskEl)  deskEl.innerText  = 'Tidak dapat terhubung ke server internal.';
     });
 
-    // =============================================
-    // BMKG: TABEL RIWAYAT GEMPA (LIVE)
-    // =============================================
     let bmkgDataList = [];
     let currentPage  = 1;
     const itemsPerPage = 5;
@@ -424,7 +452,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!container) return;
 
         container.innerHTML = '';
-
         const start = (currentPage - 1) * itemsPerPage;
         const slice = bmkgDataList.slice(start, start + itemsPerPage);
 
@@ -523,7 +550,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     </tr>`;
             }
         });
-
-}); // end DOMContentLoaded
+});
 </script>
 @endpush

@@ -4,7 +4,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 <style>
-    /* Menyembunyikan teks petunjuk arah turn-by-turn agar UI peta tetap bersih */
     .leaflet-routing-container {
         display: none !important;
     }
@@ -19,7 +18,6 @@
         <div class="absolute top-8 left-8 right-8 z-[500] flex flex-col gap-6 pointer-events-none">
             
             <div class="flex justify-between items-start w-full">
-                {{-- Geofencing Slider --}}
                 <div class="pointer-events-auto bg-white/95 backdrop-blur-md px-6 py-4 rounded-xl shadow-md border border-white/50 flex flex-col gap-2 min-w-[260px]">
                     <label for="radiusSlider" class="text-xs font-bold text-slate-500 uppercase tracking-widest cursor-pointer">
                         Geofencing Radius
@@ -257,6 +255,193 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var group = new L.featureGroup([markerMenteng, markerIstiqlal, geofenceRadius]);
     map.fitBounds(group.getBounds(), { padding: [50, 50] });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    var defaultCenter = [-6.2000, 106.8166];
+    
+    var radiusSlider = document.getElementById('radiusSlider');
+    var radiusLabel = document.getElementById('radiusLabel');
+    var radiusMeters = parseFloat(radiusSlider.value) * 1000; 
+    
+    window.currentCenterLatLng = L.latLng(defaultCenter[0], defaultCenter[1]);
+    window.isLocationDetected = false;
+    window.map = L.map('map', { zoomControl: false }).setView(defaultCenter, 13);
+    
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    var geofenceCircle = L.circle(defaultCenter, {
+        color: '#FF7F3E', fillColor: '#FF7F3E', fillOpacity: 0.1, radius: radiusMeters            
+    }).addTo(map);
+
+    var rawData = {!! json_encode($mapData ?? []) !!};
+    var markersLayer = L.featureGroup().addTo(map);
+    var routingControl = null; // Rute dari user ke lokasi
+    var dbRoutes = []; // Menyimpan instance rute-rute dari database
+
+    // Fungsi global kalkulasi rute dari titik user ke fasilitas terkait
+    window.calculateRoute = function(event, targetLat, targetLng) {
+        event.stopPropagation();
+        if (!window.isLocationDetected) {
+            alert("Lokasi Anda belum berhasil terdeteksi. Pastikan izin GPS aktif pada browser Anda.");
+            return;
+        }
+
+        if (routingControl) map.removeControl(routingControl);
+
+        routingControl = L.Routing.control({
+            waypoints: [
+                L.latLng(window.currentCenterLatLng.lat, window.currentCenterLatLng.lng),
+                L.latLng(targetLat, targetLng)
+            ],
+            lineOptions: { styles: [{ color: '#0096FF', opacity: 0.85, weight: 6 }] },
+            addWaypoints: false,
+            draggableWaypoints: false,
+            fitSelectedRoutes: true,
+            show: false,
+            createMarker: function() { return null; }
+        }).addTo(map);
+    };
+
+    function renderView(centerLatLng) {
+        // Bersihkan layer sebelumnya
+        markersLayer.clearLayers(); 
+        dbRoutes.forEach(r => map.removeControl(r)); 
+        dbRoutes = [];
+
+        const sidebarList = document.getElementById('sidebarList');
+        sidebarList.innerHTML = '';
+        let count = 0;
+
+        if (rawData.length > 0) {
+            let processedData = rawData.map(item => {
+                let latlng = L.latLng(item.lat, item.lng);
+                return { ...item, latlng: latlng, distance: map.distance(centerLatLng, latlng) };
+            });
+
+            processedData.sort((a, b) => a.distance - b.distance);
+
+            processedData.forEach(function(item) {
+                if (item.distance <= radiusMeters) {
+                    count++;
+
+                    // 1. RENDER PETA (CEK JIKA INI ADALAH JALUR EVAKUASI ATAU TITIK TUNGGAL)
+                    if (item.is_route) {
+                        // Gambar Jalur Mengikuti Jalan Raya
+                        var route = L.Routing.control({
+                            waypoints: [
+                                L.latLng(item.start_lat, item.start_lng),
+                                L.latLng(item.end_lat, item.end_lng)
+                            ],
+                            lineOptions: { styles: [{ color: item.color, opacity: 0.8, weight: 5 }] },
+                            addWaypoints: false,
+                            draggableWaypoints: false,
+                            fitSelectedRoutes: false,
+                            show: false,
+                            createMarker: function(i, wp, nWps) {
+                                // Marker custom untuk Start (Hijau) dan End (Merah)
+                                let bgClass = i === 0 ? 'bg-emerald-500' : 'bg-red-500';
+                                let popupTxt = i === 0 ? 'Mulai: ' : 'Tujuan: ';
+                                let iconHtml = `<div class="${bgClass} w-4 h-4 rounded-full border-2 border-white shadow-md"></div>`;
+                                
+                                return L.marker(wp.latLng, {
+                                    icon: L.divIcon({ className: 'bg-transparent border-0', html: iconHtml })
+                                }).bindPopup(`<strong>${popupTxt}${item.title}</strong>`);
+                            }
+                        }).addTo(map);
+                        
+                        dbRoutes.push(route); // Simpan instance agar bisa dihapus saat radius berubah
+
+                    } else {
+                        // Gambar Pin Biasa (Faskes / Posko)
+                        var pinSVG = `
+                            <div style="position: relative; width: 32px; height: 42px; display: flex; justify-content: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" style="width: 32px; height: 42px; filter: drop-shadow(0px 5px 4px rgba(0,0,0,0.3));">
+                                    <path fill="${item.color}" stroke="#ffffff" stroke-width="20" d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
+                                </svg>
+                            </div>
+                        `;
+                        var customIcon = L.divIcon({ className: 'bg-transparent border-0', html: pinSVG, iconSize: [32, 42], iconAnchor: [16, 42], popupAnchor: [0, -42] });
+                        var marker = L.marker(item.latlng, {icon: customIcon}).bindPopup('<strong style="color:' + item.color + '">' + item.title + '</strong><br>' + item.subtitle);
+                        markersLayer.addLayer(marker);
+                    }
+
+                    // 2. RENDER CARD SIDEBAR KANAN
+                    var distanceText = (item.distance / 1000).toFixed(1) + ' KM';
+                    // Jika jalur, tombol akan mengarahkan user ke titik awal jalur tersebut
+                    var navLat = item.is_route ? item.start_lat : item.lat;
+                    var navLng = item.is_route ? item.start_lng : item.lng;
+
+                    sidebarList.innerHTML += `
+                        <div class="p-6 rounded-2xl border border-slate-200 bg-white hover:border-orange-200 hover:shadow-lg transition-all group relative overflow-hidden cursor-pointer" onclick="map.setView([${item.lat}, ${item.lng}], 15)">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="text-lg font-black text-slate-800 transition-colors leading-tight" style="color: ${item.color}">${item.title}</h3>
+                                    <p class="text-xs text-slate-600 flex items-center gap-2 mt-1.5 font-medium">
+                                        <i class="fas fa-map-marker-alt text-slate-400"></i> ${distanceText} - ${item.subtitle}
+                                    </p>
+                                </div>
+                                <span class="text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wide border" style="background-color: ${item.badge_bg}; color: ${item.badge_color}; border-color: ${item.badge_color}30;">
+                                    ${item.badge_text}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-3 mb-6 mt-5">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-circle-info mr-1"></i> ${item.details}</span>
+                            </div>
+                            <div class="flex gap-3">
+                                <button onclick="window.calculateRoute(event, ${navLat}, ${navLng})" class="flex-1 py-3 text-xs font-bold text-white bg-[#FF7F3E] rounded-lg shadow-md shadow-orange-100 hover:bg-[#e66a2e] transition-all uppercase tracking-wide border-0 cursor-pointer">Arahkan Rute</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+        
+        document.getElementById('locationCount').innerText = count + ' Lokasi';
+        if (count === 0) {
+            sidebarList.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 text-center mt-20">
+                    <i class="fa-solid fa-map-location-dot text-4xl mb-3 opacity-50"></i>
+                    <p class="text-sm font-bold">Tidak ada lokasi dalam radius ini</p>
+                    <p class="text-xs mt-1">Coba perbesar radius geofencing Anda.</p>
+                </div>
+            `;
+        }
+    }
+
+    radiusSlider.addEventListener('input', function() {
+        var kmValue = parseFloat(this.value);
+        radiusLabel.textContent = kmValue.toFixed(1) + ' KM';
+        radiusMeters = kmValue * 1000;
+        geofenceCircle.setRadius(radiusMeters);
+        
+        renderView(currentCenterLatLng);
+    });
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                window.isLocationDetected = true;
+                currentCenterLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+                geofenceCircle.setLatLng(currentCenterLatLng);
+
+                L.circleMarker(currentCenterLatLng, {
+                    radius: 7, fillColor: "#3B82F6", color: "#ffffff", weight: 2, fillOpacity: 1
+                }).addTo(map).bindPopup("<b>Posisi Anda Saat Ini</b>").openPopup();
+
+                renderView(currentCenterLatLng);
+                map.fitBounds(geofenceCircle.getBounds(), { padding: [30, 30] });
+            },
+            function(error) {
+                console.warn("Akses lokasi ditolak browser.");
+                renderView(currentCenterLatLng);
+            }
+        );
+    } else {
+        renderView(currentCenterLatLng);
+    }
+
 });
 </script>
 @endpush

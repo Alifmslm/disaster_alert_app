@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Http\Controllers\Api\Officer\EvacuationRouteManagementController;
 use App\Http\Controllers\Controller;
 use App\Models\SafetyGuide;
 use App\Models\DisasterReport;
@@ -196,6 +197,48 @@ class UserPageController extends Controller
             'activeTab' => 'faskes', 
             'pageTitle' => 'Fasilitas Kesehatan', 
             'legend' => $legend
+        ]);
+    }
+
+    public function mapEvakuasi()
+    {
+        $mapData = EvacuationRouteManagementController::where('status', 'active')
+            ->whereNotNull('start_latitude')
+            ->whereNotNull('start_longitude')
+            ->whereNotNull('end_latitude')
+            ->whereNotNull('end_longitude')
+            ->get()
+            ->map(function ($route) {
+                return [
+                    'is_route'   => true, // Penanda khusus untuk JS
+                    'lat'        => $route->start_latitude, // Patokan jarak dari titik awal
+                    'lng'        => $route->start_longitude,
+                    'start_lat'  => $route->start_latitude,
+                    'start_lng'  => $route->start_longitude,
+                    'end_lat'    => $route->end_latitude,
+                    'end_lng'    => $route->end_longitude,
+                    'title'      => $route->name,
+                    'subtitle'   => $route->area ?? 'Area Umum',
+                    'badge_text' => strtoupper(str_replace('_', ' ', $route->disaster_type)),
+                    'badge_color'=> '#f97316',
+                    'badge_bg'   => '#FFF7ED',
+                    'color'      => '#f97316',
+                    'details'    => $route->distance_km ? $route->distance_km . ' KM' : 'Jalur Evakuasi',
+                    'description'=> $route->description
+                ];
+            });
+
+        $legend = [
+            ['color' => '#10B981', 'label' => 'Titik Awal'],
+            ['color' => '#EF4444', 'label' => 'Titik Akhir'],
+            ['color' => '#f97316', 'label' => 'Jalur Aman'],
+        ];
+
+        return view('pages.user.map-evacuation', [
+            'mapData'   => $mapData, 
+            'activeTab' => 'laporan', // Pastikan slug ini sesuai dengan pengecekan active tab di blade Anda
+            'pageTitle' => 'Jalur Evakuasi Terdekat', 
+            'legend'    => $legend
         ]);
     }
 
