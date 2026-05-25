@@ -164,15 +164,12 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     
-    // 1. Inisialisasi Peta & Variabel Global
     var defaultCenter = [-6.2000, 106.8166];
     
-    // Ambil elemen slider dan atur radius awal dari slider
     var radiusSlider = document.getElementById('radiusSlider');
     var radiusLabel = document.getElementById('radiusLabel');
     var radiusMeters = parseFloat(radiusSlider.value) * 1000; 
     
-    // Variabel untuk menyimpan titik pusat pengguna saat ini
     var currentCenterLatLng = L.latLng(defaultCenter[0], defaultCenter[1]);
 
     var map = L.map('map', { zoomControl: false }).setView(defaultCenter, 13);
@@ -183,7 +180,6 @@ document.addEventListener('DOMContentLoaded', function () {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    // 2. Buat Lingkaran Geofencing (Radar)
     var geofenceCircle = L.circle(defaultCenter, {
         color: '#FF7F3E',        
         fillColor: '#FF7F3E',    
@@ -194,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var incidentData = {!! json_encode($mapData ?? []) !!};
     var markersLayer = L.featureGroup().addTo(map);
 
-    // 3. Fungsi Render Marker (Hanya yang di dalam Radius)
     function renderMarkersInRadius(centerLatLng) {
         markersLayer.clearLayers(); 
 
@@ -204,7 +199,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     var incidentLatLng = L.latLng(incident.lat, incident.lng);
                     var distance = map.distance(centerLatLng, incidentLatLng);
 
-                    // Cek radius
                     if (distance <= radiusMeters) {
                         var pinSVG = `
                             <div style="position: relative; width: 32px; height: 42px; display: flex; justify-content: center;">
@@ -236,20 +230,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // 4. EVENT LISTENER: Slider Radius Berubah
     radiusSlider.addEventListener('input', function() {
         var kmValue = parseFloat(this.value);
-        radiusLabel.textContent = kmValue.toFixed(1) + ' KM'; // Update text UI
+        radiusLabel.textContent = kmValue.toFixed(1) + ' KM';
+        radiusMeters = kmValue * 1000;
+        geofenceCircle.setRadius(radiusMeters);
         
-        radiusMeters = kmValue * 1000; // Update variabel radius
-        geofenceCircle.setRadius(radiusMeters); // Ubah besar lingkaran di peta
-        
-        // Render ulang marker dan zoom animasi perlahan
         renderMarkersInRadius(currentCenterLatLng);
         map.fitBounds(geofenceCircle.getBounds(), { padding: [30, 30] }); 
     });
 
-    // 5. Deteksi Lokasi User (Geolocation)
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             function(position) {
