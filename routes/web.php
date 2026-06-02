@@ -8,6 +8,10 @@ use App\Http\Controllers\Web\Officer\KelolaDataController;
 use App\Http\Controllers\User\TindakanPreventifController;
 use App\Http\Controllers\User\DisasterReportController;
 use App\Http\Controllers\Api\Officer\EmergencyPlaceManagementController;
+use App\Http\Controllers\Api\Officer\HealthFacilityManagementController;
+use App\Http\Controllers\Api\Officer\EvacuationRouteManagementController;
+use App\Http\Controllers\MitigationNoteController;
+use App\Http\Controllers\Web\Officer\DisasterReportManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -16,61 +20,76 @@ Route::get('/', function () {
 
 Route::get('/bmkg-terbaru', [BmkgController::class, 'latest'])->name('user.bmkg.terbaru');
 
-// ==========================================
-// RUTE PENGGUNA (USER)
-// ==========================================
+/*
+|--------------------------------------------------------------------------
+| Rute Masyarakat (User)
+|--------------------------------------------------------------------------
+*/
 Route::prefix('user')->name('user.')->middleware('auth')->group(function () {
     Route::get('/home', [UserPageController::class, 'home'])->name('home');
     Route::get('/profil', [UserPageController::class, 'profile'])->name('profile');
-    Route::get('/peta-evakuasi', [UserPageController::class, 'map'])->name('map');
+    Route::get('/peta-evakuasi', function () { return redirect()->route('user.map.laporan'); })->name('map');
+    Route::get('/peta-evakuasi/laporan', [UserPageController::class, 'mapLaporan'])->name('map.laporan');
+    Route::get('/peta-evakuasi/evakuasi', [UserPageController::class, 'mapEvakuasi'])->name('map.evakuasi');
+    Route::get('/peta-evakuasi/shelter-posko', [UserPageController::class, 'mapShelter'])->name('map.shelter');
+    Route::get('/peta-evakuasi/fasilitas-kesehatan', [UserPageController::class, 'mapFaskes'])->name('map.faskes');
     Route::get('/panduan-aman', [UserPageController::class, 'safety'])->name('safety');
 
-    // Modul Laporan Bencana (Manual CRUD Routes)
     Route::get('/laporan-bencana', [DisasterReportController::class, 'index'])->name('laporan-bencana.index');
     Route::get('/laporkan-bencana', [DisasterReportController::class, 'create'])->name('report');
     Route::post('/laporkan-bencana', [DisasterReportController::class, 'store'])->name('laporan-bencana.store');
     Route::get('/laporan-bencana/{report}', [DisasterReportController::class, 'show'])->name('laporan-bencana.show');
 
-    // Modul Tindakan Preventif (Resource)
     Route::resource('tindakan-preventif', TindakanPreventifController::class)
         ->parameters(['tindakan-preventif' => 'tindakanPreventif']);
 });
 
-// ==========================================
-// RUTE PETUGAS (OFFICER)
-// ==========================================
+/*
+|--------------------------------------------------------------------------
+| Rute Petugas (Officer)
+|--------------------------------------------------------------------------
+*/
 Route::prefix('petugas')->name('officer.')->middleware('auth')->group(function () {
     Route::get('/home', [OfficerPageController::class, 'home'])->name('home');
     Route::get('/profil', [OfficerPageController::class, 'profile'])->name('profile');
-    
-    // Halaman Utama Kelola Data (Dashboard Tabs)
+
     Route::get('/kelola-data', [OfficerPageController::class, 'manageData'])->name('manage-data');
 
-    // Sub-menu Kelola Data
     Route::prefix('kelola-data')->name('kelola-data.')->group(function () {
-        
-        // 1. Shelter & Posko (Sudah Full CRUD dengan Resource)
+
+        // Shelter & Posko
         Route::resource('shelter', EmergencyPlaceManagementController::class)
             ->parameters(['shelter' => 'place']);
-            
-        // 2. Fasilitas Kesehatan (Index View)
-        // -> Nanti bisa diubah menjadi Route::resource('faskes', FaskesController::class)
-        Route::get('/faskes', [KelolaDataController::class, 'faskes'])->name('faskes');
-        
-        // 3. Jalur Evakuasi (Index View)
-        Route::get('/evakuasi', [KelolaDataController::class, 'evakuasi'])->name('evakuasi');
-        
-        // 4. Catatan Penanggulangan (Index View)
-        Route::get('/penanggulangan', [KelolaDataController::class, 'penanggulangan'])->name('penanggulangan');
-        
-        // 5. Laporan Masuk (Index View)
-        Route::get('/laporan', [KelolaDataController::class, 'laporan'])->name('laporan');
+
+        // Fasilitas Kesehatan
+        Route::resource('faskes', HealthFacilityManagementController::class)
+            ->parameters(['faskes' => 'facility']);
+
+        Route::resource('evakuasi', EvacuationRouteManagementController::class)
+            ->parameters(['evakuasi' => 'route']);
+
+        Route::resource('penanggulangan', MitigationNoteController::class)
+        ->parameters(['penanggulangan' => 'penanggulangan']);
+
+        Route::resource('laporan-bencana', DisasterReportManagementController::class)
+            ->parameters(['laporan-bencana' => 'report'])
+            ->names([
+                'index'   => 'laporan',
+                'create'  => 'laporan.create',
+                'store'   => 'laporan.store',
+                'show'    => 'laporan.show',
+                'edit'    => 'laporan.edit',
+                'update'  => 'laporan.update',
+                'destroy' => 'laporan.destroy',
+            ]);
     });
 });
 
-// ==========================================
-// RUTE PROFILE & AUTH
-// ==========================================
+/*
+|--------------------------------------------------------------------------
+| Rute Bawaan Laravel Breeze (Profile & Auth)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

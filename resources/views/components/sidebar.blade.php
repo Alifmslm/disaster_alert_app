@@ -12,7 +12,7 @@
 
     $officerMenus = [
         ['label' => 'Dashboard Petugas', 'route' => 'officer.home', 'match' => ['officer.home'], 'icon' => 'fa-solid fa-bullseye'],
-        ['label' => 'Kelola Data', 'route' => 'officer.manage-data', 'match' => ['officer.manage-data', 'officer.kelola-data.*'], 'icon' => 'fa-solid fa-database'],
+        ['label' => 'Kelola Data', 'route' => 'officer.kelola-data.laporan', 'match' => ['officer.kelola-data', 'officer.kelola-data.*'], 'icon' => 'fa-solid fa-database'],
         ['label' => 'Profil Petugas', 'route' => 'officer.profile', 'match' => ['officer.profile'], 'icon' => 'fa-regular fa-user'],
     ];
 
