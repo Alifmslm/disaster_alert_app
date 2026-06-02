@@ -15,7 +15,6 @@ class EmergencyPlaceManagementController extends Controller
      */
     public function index(Request $request)
     {
-        // Hanya ambil tipe Shelter dan Posko Darurat
         $query = EmergencyPlace::query()
             ->whereIn('type', [
                 EmergencyPlaceType::Shelter->value,

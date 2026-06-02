@@ -10,6 +10,8 @@ use App\Http\Controllers\User\DisasterReportController;
 use App\Http\Controllers\Api\Officer\EmergencyPlaceManagementController;
 use App\Http\Controllers\Api\Officer\HealthFacilityManagementController;
 use App\Http\Controllers\Api\Officer\EvacuationRouteManagementController;
+use App\Http\Controllers\Web\Officer\DisasterReportManagementController;
+use App\Http\Controllers\Web\Officer\ReportManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -28,6 +30,7 @@ Route::prefix('user')->name('user.')->middleware('auth')->group(function () {
     Route::get('/profil', [UserPageController::class, 'profile'])->name('profile');
     Route::get('/peta-evakuasi', function () { return redirect()->route('user.map.laporan'); })->name('map');
     Route::get('/peta-evakuasi/laporan', [UserPageController::class, 'mapLaporan'])->name('map.laporan');
+    Route::get('/peta-evakuasi/evakuasi', [UserPageController::class, 'mapEvakuasi'])->name('map.evakuasi');
     Route::get('/peta-evakuasi/shelter-posko', [UserPageController::class, 'mapShelter'])->name('map.shelter');
     Route::get('/peta-evakuasi/fasilitas-kesehatan', [UserPageController::class, 'mapFaskes'])->name('map.faskes');
     Route::get('/panduan-aman', [UserPageController::class, 'safety'])->name('safety');
@@ -62,13 +65,23 @@ Route::prefix('petugas')->name('officer.')->middleware('auth')->group(function (
         Route::resource('faskes', HealthFacilityManagementController::class)
             ->parameters(['faskes' => 'facility']);
 
-        // Jalur Evakuasi — CRUD via web
         Route::resource('evakuasi', EvacuationRouteManagementController::class)
             ->parameters(['evakuasi' => 'route']);
 
         // Penanggulangan & Laporan (read-only untuk sekarang)
         Route::get('/penanggulangan', [KelolaDataController::class, 'penanggulangan'])->name('penanggulangan');
-        Route::get('/laporan', [KelolaDataController::class, 'laporan'])->name('laporan');
+
+        Route::resource('laporan-bencana', DisasterReportManagementController::class)
+            ->parameters(['laporan-bencana' => 'report'])
+            ->names([
+                'index'   => 'laporan',
+                'create'  => 'laporan.create',
+                'store'   => 'laporan.store',
+                'show'    => 'laporan.show',
+                'edit'    => 'laporan.edit',
+                'update'  => 'laporan.update',
+                'destroy' => 'laporan.destroy',
+            ]);
     });
 });
 
