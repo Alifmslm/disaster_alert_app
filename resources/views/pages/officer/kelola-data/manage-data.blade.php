@@ -90,7 +90,7 @@
                    class="relative min-h-[62px] flex items-center px-7 text-[13px] font-bold whitespace-nowrap transition-colors {{ $currentTab === 'faskes' ? $activeClass : $inactiveClass }}">
                     Fasilitas Kesehatan
                 </a>
-                <a href="{{ route('officer.kelola-data.penanggulangan') }}" 
+                <a href="{{ route('officer.kelola-data.penanggulangan.index') }}" 
                    class="relative min-h-[62px] flex items-center px-7 text-[13px] font-bold whitespace-nowrap transition-colors {{ $currentTab === 'penanggulangan' ? $activeClass : $inactiveClass }}">
                     Catatan Penanggulangan
                 </a>

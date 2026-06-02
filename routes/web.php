@@ -10,8 +10,8 @@ use App\Http\Controllers\User\DisasterReportController;
 use App\Http\Controllers\Api\Officer\EmergencyPlaceManagementController;
 use App\Http\Controllers\Api\Officer\HealthFacilityManagementController;
 use App\Http\Controllers\Api\Officer\EvacuationRouteManagementController;
+use App\Http\Controllers\MitigationNoteController;
 use App\Http\Controllers\Web\Officer\DisasterReportManagementController;
-use App\Http\Controllers\Web\Officer\ReportManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -68,8 +68,8 @@ Route::prefix('petugas')->name('officer.')->middleware('auth')->group(function (
         Route::resource('evakuasi', EvacuationRouteManagementController::class)
             ->parameters(['evakuasi' => 'route']);
 
-        // Penanggulangan & Laporan (read-only untuk sekarang)
-        Route::get('/penanggulangan', [KelolaDataController::class, 'penanggulangan'])->name('penanggulangan');
+        Route::resource('penanggulangan', MitigationNoteController::class)
+        ->parameters(['penanggulangan' => 'penanggulangan']);
 
         Route::resource('laporan-bencana', DisasterReportManagementController::class)
             ->parameters(['laporan-bencana' => 'report'])
