@@ -108,7 +108,7 @@
     {{-- TABEL LAPORAN --}}
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="mb-6 flex items-center justify-between">
-            <h3 class="text-lg font-bold text-slate-800">Daftar Laporan (Sesuai Filter)</h3>
+            <h3 class="text-lg font-bold text-slate-800">Daftar Laporan</h3>
         </div>
 
         <div class="overflow-x-auto">

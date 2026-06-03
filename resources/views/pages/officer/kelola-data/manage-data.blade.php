@@ -75,7 +75,7 @@
                    class="relative min-h-[62px] flex items-center pr-7 text-[13px] font-bold whitespace-nowrap transition-colors {{ $currentTab === 'laporan' ? $activeClass : $inactiveClass }}">
                     Laporan Bencana
                 </a>
-                <a href="{{ route('officer.kelola-data.evakuasi') }}" 
+                <a href="{{ route('officer.kelola-data.evakuasi.index') }}" 
                    class="relative min-h-[62px] flex items-center px-7 text-[13px] font-bold whitespace-nowrap transition-colors {{ $currentTab === 'evakuasi' ? $activeClass : $inactiveClass }}">
                     Jalur Evakuasi
                 </a>
@@ -86,11 +86,11 @@
                     Shelter & Posko
                 </a>
                 
-                <a href="{{ route('officer.kelola-data.faskes') }}" 
+                <a href="{{ route('officer.kelola-data.faskes.index') }}" 
                    class="relative min-h-[62px] flex items-center px-7 text-[13px] font-bold whitespace-nowrap transition-colors {{ $currentTab === 'faskes' ? $activeClass : $inactiveClass }}">
                     Fasilitas Kesehatan
                 </a>
-                <a href="{{ route('officer.kelola-data.penanggulangan') }}" 
+                <a href="{{ route('officer.kelola-data.penanggulangan.index') }}" 
                    class="relative min-h-[62px] flex items-center px-7 text-[13px] font-bold whitespace-nowrap transition-colors {{ $currentTab === 'penanggulangan' ? $activeClass : $inactiveClass }}">
                     Catatan Penanggulangan
                 </a>

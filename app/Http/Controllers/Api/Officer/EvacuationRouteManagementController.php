@@ -2,61 +2,94 @@
 
 namespace App\Http\Controllers\Api\Officer;
 
-use App\Http\Controllers\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Officer\StoreEvacuationRouteRequest;
-use App\Http\Resources\EvacuationRouteResource;
 use App\Models\EvacuationRoute;
-use App\Services\EvacuationRouteService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class EvacuationRouteManagementController extends Controller
 {
-    use RespondsWithApi;
-
-    public function __construct(private readonly EvacuationRouteService $routes)
+    public function index(Request $request)
     {
+        $query = EvacuationRoute::query();
+
+        // Filter status
+        if ($request->filled('status') && $request->status !== 'semua') {
+            $query->where('status', $request->status);
+        }
+
+        // Filter tipe bencana
+        if ($request->filled('disaster_type') && $request->disaster_type !== 'semua') {
+            $query->where('disaster_type', $request->disaster_type);
+        }
+
+        // Filter area/wilayah
+        if ($request->filled('area') && $request->area !== 'semua') {
+            $query->where('area', $request->area);
+        }
+
+        $routes = $query->latest()->paginate(15)->withQueryString();
+
+        return view('pages.officer.kelola-data.jalur-evakuasi', compact('routes'));
     }
 
-    public function index(Request $request): JsonResponse
+    /**
+     * Tampilkan form tambah jalur evakuasi.
+     */
+    public function create()
     {
-        return $this->paginated(
-            $this->routes->paginate($request->query()),
-            EvacuationRouteResource::class,
-            'Daftar jalur evakuasi berhasil diambil.'
-        );
+        return view('pages.officer.kelola-data.create.jalur-evakuasi');
     }
 
-    public function store(StoreEvacuationRouteRequest $request): JsonResponse
+    /**
+     * Simpan jalur evakuasi baru ke database.
+     */
+    public function store(StoreEvacuationRouteRequest $request)
     {
-        return $this->success(
-            new EvacuationRouteResource($this->routes->create($request->validated())),
-            'Jalur evakuasi berhasil dibuat.',
-            201
-        );
+        EvacuationRoute::create($request->validated());
+
+        return redirect()
+            ->route('officer.kelola-data.evakuasi.index')
+            ->with('success', 'Jalur evakuasi berhasil ditambahkan.');
     }
 
-    public function show(EvacuationRoute $route): JsonResponse
+    /**
+     * Tampilkan detail jalur evakuasi.
+     */
+    public function show(EvacuationRoute $route)
     {
-        return $this->success(
-            new EvacuationRouteResource($this->routes->find($route->id)),
-            'Detail jalur evakuasi berhasil diambil.'
-        );
+        return view('pages.officer.kelola-data.show.jalur-evakuasi', compact('route'));
     }
 
-    public function update(StoreEvacuationRouteRequest $request, EvacuationRoute $route): JsonResponse
+    /**
+     * Tampilkan form edit jalur evakuasi.
+     */
+    public function edit(EvacuationRoute $route)
     {
-        return $this->success(
-            new EvacuationRouteResource($this->routes->update($route->id, $request->validated())),
-            'Jalur evakuasi berhasil diperbarui.'
-        );
+        return view('pages.officer.kelola-data.update.jalur-evakuasi', compact('route'));
     }
 
-    public function destroy(EvacuationRoute $route): JsonResponse
+    /**
+     * Perbarui data jalur evakuasi di database.
+     */
+    public function update(StoreEvacuationRouteRequest $request, EvacuationRoute $route)
     {
-        $this->routes->delete($route->id);
+        $route->update($request->validated());
 
-        return $this->success(null, 'Jalur evakuasi berhasil dihapus.');
+        return redirect()
+            ->route('officer.kelola-data.evakuasi.index')
+            ->with('success', 'Jalur evakuasi berhasil diperbarui.');
+    }
+
+    /**
+     * Hapus jalur evakuasi dari database.
+     */
+    public function destroy(EvacuationRoute $route)
+    {
+        $route->delete();
+
+        return redirect()
+            ->route('officer.kelola-data.evakuasi.index')
+            ->with('success', 'Jalur evakuasi berhasil dihapus.');
     }
 }
