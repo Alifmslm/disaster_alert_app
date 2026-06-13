@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\DisasterReport;
 use App\Enums\ReportStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OfficerPageController extends Controller
 {
     public function home(Request $request)
     {
-        // Auto-clear expired disasters
         \App\Models\DisasterEvent::whereNotNull('expired_at')
             ->where('expired_at', '<=', now())
             ->each(function ($event) {
@@ -19,10 +19,8 @@ class OfficerPageController extends Controller
                 $event->delete();
             });
 
-        // 1. Inisialisasi Query Dasar
         $query = DisasterReport::query();
 
-        // 2. Terapkan Filter jika ada parameter dari URL (?type=... & status=...)
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
@@ -30,7 +28,6 @@ class OfficerPageController extends Controller
             $query->where('status', $request->status);
         }
 
-        // 3. Hitung KPI Dashboard berdasarkan filter
         $totalReports = (clone $query)->count();
         
         $unhandledReports = (clone $query)->where('status', ReportStatus::Submitted->value)->count();
@@ -41,22 +38,17 @@ class OfficerPageController extends Controller
             ReportStatus::InProgress->value
         ])->distinct('location_name')->count('location_name');
 
-        // 4. Ambil Laporan Terbaru untuk Tabel
         $latestReports = (clone $query)->latest()->take(10)->get();
 
-        // 4.1. Lokasi dengan bencana berulang (Recurring Disasters)
-        $recurringDisasters = DisasterReport::select('location_name', 'type')
-            ->selectRaw('count(*) as total_occurrences')
+        $recurringDisasters = DisasterReport::select('location_name', 'type', DB::raw('count(*) as total_occurrences'))
             ->groupBy('location_name', 'type')
-            ->having('total_occurrences', '>', 1)
-            ->orderByDesc('total_occurrences')
+            ->havingRaw('count(*) > 1')
+            ->orderBy('total_occurrences', 'desc')
             ->take(5)
             ->get();
 
-        // 5. Ambil Data Peta
         $mapQuery = clone $query;
         
-        // Jika petugas tidak memfilter status spesifik, peta hanya tampilkan yang masih aktif saja
         if (!$request->filled('status')) {
             $mapQuery->whereIn('status', [
                 ReportStatus::Submitted->value, 
@@ -75,11 +67,11 @@ class OfficerPageController extends Controller
                     'title' => strtoupper(str_replace('_', ' ', $report->type)),
                     'desc' => $report->location_name,
                     'status' => match($report->status) {
-                        ReportStatus::Submitted->value => '#dc2626', // Merah
-                        ReportStatus::Verified->value => '#ea580c',  // Oranye
-                        ReportStatus::InProgress->value => '#2563eb', // Biru
-                        ReportStatus::Handled->value => '#16a34a',    // Hijau
-                        default => '#64748b',                         // Abu-abu
+                        ReportStatus::Submitted->value => '#dc2626',
+                        ReportStatus::Verified->value => '#ea580c',
+                        ReportStatus::InProgress->value => '#2563eb',
+                        ReportStatus::Handled->value => '#16a34a',
+                        default => '#64748b',
                     }
                 ];
             });
