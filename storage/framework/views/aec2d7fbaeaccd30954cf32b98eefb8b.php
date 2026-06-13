@@ -1,0 +1,1 @@
+<?php /**PATH Z:\internet_download\Kuliah Alif\SEMESTER 4\MANPROSI\disaster_alert_app\resources\views\welcome.blade.php ENDPATH**/ ?>
