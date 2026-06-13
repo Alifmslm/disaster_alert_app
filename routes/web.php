@@ -15,6 +15,12 @@ use App\Http\Controllers\Web\Officer\DisasterReportManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return auth()->user()->isOfficer() 
+            ? redirect()->route('officer.home') 
+            : redirect()->route('user.home');
+    }
+    
     return redirect()->route('login');
 });
 
